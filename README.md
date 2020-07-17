@@ -33,14 +33,14 @@ and provides a simple facility in your code to guard a code's block.
 ##### Example of ReentrantLock
 ```java
 public class ValueHolder {
-ReentrantLock lock = new ReentrantLock(true);
-...
+  ReentrantLock lock = new ReentrantLock(true);
+  ...
 
-public void call() {
-lock.lock();
-... do some stuff here
-lock.unlock();
-}
+  public void call() {
+    lock.lock();
+    ... do some stuff here
+    lock.unlock();
+  }
 
 }
 ```
@@ -58,33 +58,33 @@ An object has one field which is read and written. For test I have created 60 th
 ```java
 public class UnfairObjectAccess {
 
-private volatile int value = 100;
-private ReentrantReadWriteLock lock;
+  private volatile int value = 100;
+  private ReentrantReadWriteLock lock;
 
-public UnfairObjectAccess() {
-lock = createLock();
-}
+  public UnfairObjectAccess() {
+    lock = createLock();
+  }
 
-protected ReentrantReadWriteLock createLock() {
-return new ReentrantReadWriteLock();
-}
+  protected ReentrantReadWriteLock createLock() {
+    return new ReentrantReadWriteLock();
+  }
 
-public int getValue() {
-try {
-lock.readLock().lock();
-return value;
-} finally {
-lock.readLock().unlock();
-}
-}
+  public int getValue() {
+    try {
+      lock.readLock().lock();
+      return value;
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
 
-public void setValue(int value) {
-lock.writeLock().lock();
+  public void setValue(int value) {
+    lock.writeLock().lock();
 
-this.value = value;
+    this.value = value;
 
-lock.writeLock().unlock();
-}
+    lock.writeLock().unlock();
+  }
 
 }
 ```
@@ -93,24 +93,24 @@ lock.writeLock().unlock();
 ```java
 public class AbstractTest {
 
-public Runnable createReadJob(final Logger LOG, final UnfairObjectAccess subject) {
-return () -&gt; {
-int value = subject.getValue();
-if(value != 101) {
-LOG.debug("Read a default value");
-} else {
-LOG.debug("A value has been updated");
-}
-};
-}
+  public Runnable createReadJob(final Logger LOG, final UnfairObjectAccess subject) {
+    return () -> {
+      int value = subject.getValue();
+      if(value != 101) {
+        LOG.debug("Read a default value");
+      } else {
+        LOG.debug("A value has been updated");
+      }
+    };
+  }
 
-public Runnable createWriteJob(final Logger LOG, final UnfairObjectAccess subject) {
-return () -&gt; {
-LOG.debug("Setting a new value");
-subject.setValue(101);
-LOG.debug("Done setting the new value");
-};
-}
+  public Runnable createWriteJob(final Logger LOG, final UnfairObjectAccess subject) {
+    return () -> {
+      LOG.debug("Setting a new value");
+      subject.setValue(101);
+      LOG.debug("Done setting the new value");
+    };
+  }
 
 }
 ```
@@ -119,23 +119,23 @@ LOG.debug("Done setting the new value");
 ```java
 public class StarvationTest extends AbstractTest {
 
-private static final Logger LOG = Logger.getLogger(StarvationTest.class);
+  private static final Logger LOG = Logger.getLogger(StarvationTest.class);
 
-private final UnfairObjectAccess subject = new UnfairObjectAccess();
+  private final UnfairObjectAccess subject = new UnfairObjectAccess();
 
-@Test
-public void testStarvationForWriteOperation() throws InterruptedException {
-ThreadsBuilder.create()
-//  priority 9, repeat 30 times the given job
-.withThread(9, 30, createReadJob(LOG, subject))
-//  priority 2, repeat 1 time the given job
-.withThread(2, createWriteJob(LOG, subject))
-//  priority 9, repeat 30 times the given job
-.withThread(9, 30, createReadJob(LOG, subject))
-.start();
+  @Test
+  public void testStarvationForWriteOperation() throws InterruptedException {
+    ThreadsBuilder.create()
+      //  priority 9, repeat 30 times the given job
+      .withThread(9, 30, createReadJob(LOG, subject))
+      //  priority 2, repeat 1 time the given job
+      .withThread(2, createWriteJob(LOG, subject))
+      //  priority 9, repeat 30 times the given job
+      .withThread(9, 30, createReadJob(LOG, subject))
+    .start();
 
-Thread.sleep(1000);
-}
+    Thread.sleep(1000);
+  }
 
 }
 ```
@@ -173,23 +173,23 @@ return new ReentrantReadWriteLock(true);
 ```java
 public class FairnessTest extends AbstractTest {
 
-private static final Logger LOG = Logger.getLogger(FairnessTest.class);
+  private static final Logger LOG = Logger.getLogger(FairnessTest.class);
 
-private final FairObjectAccess subject = new FairObjectAccess();
+  private final FairObjectAccess subject = new FairObjectAccess();
 
-@Test
-public void testFairnessForWriteOperation() throws InterruptedException {
-ThreadsBuilder.create()
-//  priority 9, repeat 30 times given job
-.withThread(9, 30, createReadJob(LOG, subject))
-//  priority 2, repeat 1 time given job
-.withThread(2, createWriteJob(LOG, subject))
-//  priority 9, repeat 30 times given job
-.withThread(9, 30, createReadJob(LOG, subject))
-.start();
+  @Test
+  public void testFairnessForWriteOperation() throws InterruptedException {
+    ThreadsBuilder.create()
+      //  priority 9, repeat 30 times given job
+      .withThread(9, 30, createReadJob(LOG, subject))
+      //  priority 2, repeat 1 time given job
+      .withThread(2, createWriteJob(LOG, subject))
+      //  priority 9, repeat 30 times given job
+      .withThread(9, 30, createReadJob(LOG, subject))
+    .start();
 
-Thread.sleep(1000);
-}
+    Thread.sleep(1000);
+  }
 
 }
 ```
